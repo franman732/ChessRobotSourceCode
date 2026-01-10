@@ -16,7 +16,6 @@ def timed_call(fn, *args, name=None):
 engine = chess.engine.SimpleEngine.popen_uci("C:\\Stockfish\\stockfish-windows-x86-64-avx2")
 board = chess.Board()
 
-
 width = 750
 height = 750
 true_corners = np.float32([
