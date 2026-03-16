@@ -22,10 +22,10 @@ board.turn = chess.BLACK
 width = 750
 height = 750
 true_corners = np.float32([
-    [664, 192], # Top left
-    [1350, 198], # Top right
-    [1335, 903], # Bottom right
-    [658, 898], # Bottom left
+    [631, 234], # Top left
+    [1251, 238], # Top right
+    [1239, 871], # Bottom right
+    [630, 867], # Bottom left
 ])
 dst_pts = np.float32([
     [0, 0],
@@ -38,15 +38,16 @@ button_clicked = False
 not_initialized = True
 
 mean_strength = 1
-edges_strength = 5.5
-variance_strength = 8
-deviation_strength = 125
-threshold =  1500
+edges_strength = 10
+variance_strength = 15
+lightness_strength = 10
+deviation_strength = 50
+threshold =  2500
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2,2))
 
-upper_mapx = 19
-lower_mapx = 15
-upper_mapy = 9
+upper_mapx = 12
+lower_mapx = 7
+upper_mapy = 7
 lower_mapy = 5
 
 check_1 = True
@@ -136,10 +137,10 @@ def infer_chess_board(starting_images):
 
                     x_start = col * square_size
                     y_start = row * square_size
-                    blurred_HSV_square = blurred_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-                    blurred_square = blurred_for_variance[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-                    lab_square = blurred_for_lab[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-                    edge_square = edge_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+                    blurred_HSV_square = blurred_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
+                    blurred_square = blurred_for_variance[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
+                    lab_square = blurred_for_lab[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
+                    edge_square = edge_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
                     edges = np.count_nonzero(cv2.Canny(edge_square, 100, 225))
                     variance = np.var(blurred_square)
                     deviation = np.std(blurred_square)
@@ -149,7 +150,7 @@ def infer_chess_board(starting_images):
                     hist_s = cv2.calcHist([s], [0], None, [16], [0, 256])
                     hist = np.concatenate([hist_h, hist_s])
                     hist = cv2.normalize(hist, hist).flatten()
-                    L = np.mean(lab_square[:,:,0])
+                    L = np.mean(clahe.apply(lab_square[:,:,0]))
                     A = np.mean(lab_square[:,:,1], axis=(0,1))
                     B = np.mean(lab_square[:,:,2], axis=(0,1))
                     inferred_board[0][row][col] = edges
@@ -190,7 +191,8 @@ def determine_positions():
                 edges_dif = np.float64(abs(current_characteristics[i][0][row][col] - initial_characteristics[i][0][row][col]))
                 variance_dif = np.float64(abs(current_characteristics[i][1][row][col] - initial_characteristics[i][1][row][col]))
                 deviation_dif = np.float64(abs(current_characteristics[i][2][row][col] - initial_characteristics[i][2][row][col]))
-                total_dif = np.float64(edges_dif * edges_strength + variance_dif * variance_strength + deviation_dif * deviation_strength)
+                Lightness_dif = np.float64(abs(current_characteristics[i][3][row][col] - initial_characteristics[i][3][row][col]))
+                total_dif = np.float64(edges_dif * edges_strength + variance_dif * variance_strength + deviation_dif * deviation_strength + Lightness_dif * lightness_strength)
                 if total_dif > threshold:
                     positions[i][row][col] = 'X'  
                 else: 
@@ -363,7 +365,7 @@ def detect_passant(current_positions, previous_positions, changed_coordinates):
     return True
 
 def check_for_move():
-    global check_1, previous_positions, previous_characteristics, hist_images, previous_hist
+    global check_1, previous_positions, previous_characteristics, hist_images, previous_hist, initial_characteristics
     skip_move = 0
     changed_coordinates = []
     if check_1 == True:
@@ -440,15 +442,17 @@ def determine_move():
     return result.move
 
 class arm:
+    def servo_0():
+        pass
     def __init__(self):
         pass
 
 initialize_camera()
-initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260115_19_21_26_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_52_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_53_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_54_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_55_Pro.jpg")
+initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260204_18_46_13_Pro.jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260204_18_46_14_Pro.jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260204_18_46_15_Pro (2).jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260204_18_46_15_Pro.jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260204_18_46_16_Pro.jpg")
                                             ])
 
 """
@@ -456,47 +460,8 @@ starting_values()
 while True:
     check_for_move()
 
-
 """
 
-
-
-
-
-
-"""
-def initialize_values():
-    while not_initialized == True:
-        button_clicked = check_button()
-        if button_clicked == True:
-            global initial_characteristics
-            initial_characteristics = infer_chess_board("C:\\Chess_Images\\image_for_initial_dark.jpg")
-            not_initialized = False
-
-
-
-def determine_positions():
-    current_characteristics = infer_chess_board(take_picture())
-    positions = np.array([['E' for _ in range(8)] for _ in range(8)])
-    diff = np.array([[0 for _ in range(8)] for _ in range(8)], dtype=np.int16)
-    for row in range(8):
-        for col in range(8):
-            edges_dif = np.float64(abs(current_characteristics[0][row][col] - initial_characteristics[0][row][col]))
-            variance_dif = np.float64(abs(current_characteristics[1][row][col] - initial_characteristics[1][row][col]))
-            deviation_dif = np.float64(abs(current_characteristics[2][row][col] - initial_characteristics[2][row][col]))
-            total_dif = np.float64(edges_dif * edges_strength + variance_dif * variance_strength + deviation_dif * deviation_strength)
-            if total_dif > threshold:
-                positions[row][col] = 'X'  
-            else: 
-                positions[row][col] = 'E'
-            diff[row][col] = total_dif
-    print("Differences:", diff)
-    return positions
-
-
-
-
-"""
 
 original_image = take_pictures()[0]
 warped_image = warp_board(original_image)
@@ -512,58 +477,58 @@ hsv_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
 square_size = image.shape[0] // 8
 
 
-x_start = 0 * square_size
-y_start = 0 * square_size
-mapped_row = map_range(0, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 0X0", square)
+x_start = 1 * square_size
+y_start = 5 * square_size
+mapped_row = map_range(5, 0, 7, lower_mapy, upper_mapy)
+mapped_col = map_range(1, 0, 7, lower_mapx, upper_mapx)
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
+cv2.imshow("Square 1X5", square)
+
 
 x_start = 7 * square_size
 y_start = 7 * square_size
 mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
 mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
 cv2.imshow("Square 7x7", square)
 
 x_start = 7 * square_size
 y_start = 0 * square_size
 mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
 mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
 cv2.imshow("Square 7X0", square)
 
 x_start = 0 * square_size
 y_start = 7 * square_size
 mapped_row = map_range(0, 0, 7, lower_mapy, upper_mapy)
 mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
 cv2.imshow("Square 0X7", square)
 
 x_start = 3 * square_size
 y_start = 0 * square_size
 mapped_row = map_range(3, 0, 7, lower_mapy, upper_mapy)
 mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
 cv2.imshow("Square 3X0", square)
 
 x_start = 7 * square_size
 y_start = 1 * square_size
 mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
 mapped_col = map_range(1, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
 cv2.imshow("Square 7X1", square)
 
 x_start = 3 * square_size
 y_start = 7 * square_size
 mapped_row = map_range(3, 0, 7, lower_mapy, upper_mapy)
 mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
+square = warped_image[y_start + mapped_row + square_size // 7:(y_start + square_size) - square_size//7 + mapped_row, x_start + mapped_col + square_size//7:(x_start + square_size) - square_size//7 + mapped_col]
 cv2.imshow("Square 3X7", square)
 cv2.waitKey(0)
 
 """
-
 
 
 

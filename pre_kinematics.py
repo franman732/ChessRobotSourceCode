@@ -16,16 +16,14 @@ def timed_call(fn, *args, name=None):
 engine = chess.engine.SimpleEngine.popen_uci("C:\\Stockfish\\stockfish-windows-x86-64-avx2")
 board = chess.Board()
 
-BOARD_FLIPPED = False
-board.turn = chess.BLACK
 
 width = 750
 height = 750
 true_corners = np.float32([
-    [664, 192], # Top left
-    [1350, 198], # Top right
-    [1335, 903], # Bottom right
-    [658, 898], # Bottom left
+    [637, 88], # Top left
+    [1331, 94], # Top right
+    [1311, 805], # Bottom right
+    [635, 796], # Bottom left
 ])
 dst_pts = np.float32([
     [0, 0],
@@ -38,14 +36,14 @@ button_clicked = False
 not_initialized = True
 
 mean_strength = 1
-edges_strength = 5.5
-variance_strength = 8
-deviation_strength = 125
-threshold =  1500
+edges_strength = 6.5
+variance_strength = 9.5
+deviation_strength = 150
+threshold =  900
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2,2))
 
-upper_mapx = 19
-lower_mapx = 15
+upper_mapx = 17
+lower_mapx = 10
 upper_mapy = 9
 lower_mapy = 5
 
@@ -56,23 +54,6 @@ previous_characteristics = None
 cap = None
 hist_images = []
 previous_hist = None
-
-def rc_to_square(row, col):
-    if BOARD_FLIPPED:
-        # camera top = Black's 8th rank
-        return chess.square(7 - col, row)
-    else:
-        # camera top = White's 8th rank
-        return chess.square(col, 7 - row)
-    
-def square_to_rc(square):
-    rank = chess.square_rank(square)
-    file = chess.square_file(square)
-
-    if BOARD_FLIPPED:
-        return rank, 7 - file
-    else:
-        return 7 - rank, file
 
 def map_range(x, in_min, in_max, out_min, out_max):
     return int((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
@@ -92,7 +73,7 @@ def initialize_camera():
 def take_pictures():
     photos = []
     for i in range(5):
-        ret, frame = cap.read()
+        ret, frame = timed_call(cap.read)
         if ret:
             photos.append(frame)
         else:
@@ -123,11 +104,10 @@ def infer_chess_board(starting_images):
             gray_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2GRAY)
             hsv_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
             lab_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2LAB)
-            blurred_for_variance = cv2.bilateralFilter(gray_image, d=7, sigmaColor=80, sigmaSpace=50)
+            blurred_for_variance = cv2.GaussianBlur(gray_image, (3, 3), 0)
             blurred_image = cv2.GaussianBlur(hsv_image, (3, 3), 0)
             blurred_for_lab = cv2.GaussianBlur(lab_image, (3, 3), 0)
-            equalized_image = cv2.equalizeHist(gray_image)
-            edge_image = clahe.apply(equalized_image)
+            edge_image = clahe.apply(blurred_for_variance)
 
             for row in range(8):
                 for col in range(8):
@@ -231,13 +211,14 @@ def determine_capture(current_characteristics, previous_characteristics, current
     move2 = None
     from_square = None
     if previous_positions[row][col] == 'X' and current_positions[row][col] == 'E':               
-        from_square = rc_to_square(row, col)
+        from_square = chess.square(col, 7 - row)
     if from_square is None:
         return True
     for move in board.legal_moves:
         if move.from_square == from_square:
-            row_2, col_2 = square_to_rc(move.to_square)
-            if current_positions[row_2][col_2] == 'X':
+            if current_positions[(7 - chess.square_rank(move.to_square))][chess.square_file(move.to_square)] == 'X':
+                row_2 = 7 - chess.square_rank(move.to_square)
+                col_2 = chess.square_file(move.to_square)
                 prev_hist = np.mean(array_hist_p[:, row_2, col_2, :], axis=0)
                 curr_hist = np.mean(array_hist_n[:, row_2, col_2, :], axis=0)
                 prev_L = np.mean([previous_characteristics[i][3][row_2][col_2] for i in range(5)])
@@ -246,11 +227,11 @@ def determine_capture(current_characteristics, previous_characteristics, current
                 new_A = np.mean([current_characteristics[i][4][row_2][col_2] for i in range(5)])
                 prev_B = np.mean([previous_characteristics[i][5][row_2][col_2] for i in range(5)])
                 new_B = np.mean([current_characteristics[i][5][row_2][col_2] for i in range(5)])
-                to_square = rc_to_square(row_2, col_2)
+                to_square = chess.square(col_2, 7 - row_2)
                 move2 = chess.Move(from_square, to_square)
                 if ((cv2.compareHist(prev_hist, curr_hist, cv2.HISTCMP_BHATTACHARYYA) > .1) and ((abs(prev_L - new_L) > 50) or ((abs(prev_A - new_A) > 2) and (abs(prev_B - new_B) > 2)))):
                     piece = board.piece_at(from_square)
-                    if piece and piece.piece_type == chess.PAWN and ((row_2 == 0) or (row_2 == 7)):
+                    if piece and piece.piece_type == chess.PAWN and ((chess.square_rank(to_square) == 0) or (chess.square_rank(to_square) == 7)):
                         move2 = chess.Move(from_square, to_square, promotion=chess.QUEEN)
                         print("Pawn promotion capture:", move2)
                     if move2 in board.legal_moves:
@@ -265,7 +246,7 @@ def determine_capture(current_characteristics, previous_characteristics, current
                         except Exception as e:
                             print("broken move:", e)
                     else:
-                        print("not legal: ", move2)
+                        print("not legal")
                 else:
                     print("Mean not strong enough for capture: ", )
                     print("Hist: ", cv2.compareHist(prev_hist, curr_hist, cv2.HISTCMP_BHATTACHARYYA))
@@ -274,6 +255,8 @@ def determine_capture(current_characteristics, previous_characteristics, current
     return True
 
 def detect_castle(current_positions, previous_positions, changed_coordinates):
+    king_row = king_col = rook_row = rook_col = None
+    KING_ROW = KING_COL = ROOK_ROW = ROOK_COL = None
     king = 0
     rook = 0
     KING = 0
@@ -285,37 +268,42 @@ def detect_castle(current_positions, previous_positions, changed_coordinates):
     else:
         turn = "black"
     for position in changed_coordinates:
-        row, col = position
-        square = rc_to_square(row, col)
+        row = 7 - position[0]
+        col = position[1]
+        square = chess.square(col, row)
         piece = board.piece_at(square)
         if turn == "black":
             if ((previous_positions[position[0]][position[1]] == 'X' and current_positions[position[0]][position[1]] == 'E') and piece is not None and piece.piece_type == chess.KING):
                 king = 1
-                king_square = square
+                king_row = position[0]
+                king_col = position[1]
             if ((previous_positions[position[0]][position[1]] == 'X' and current_positions[position[0]][position[1]] == 'E') and piece is not None and piece.piece_type == chess.ROOK):
                 rook = 1
-                rook_square = square
+                rook_row = position[0]
+                rook_col = position[1]
             if ((previous_positions[position[0]][position[1]] == 'E' and current_positions[position[0]][position[1]] == 'X') and board.piece_at(square) is None):
                 two_change += 1
         if turn == "white":
             if ((previous_positions[position[0]][position[1]] == 'X' and current_positions[position[0]][position[1]] == 'E') and piece is not None and piece.piece_type == chess.KING):
                 KING = 1
-                KING_SQUARE = square
+                KING_ROW = position[0]
+                KING_COL = position[1]
             if ((previous_positions[position[0]][position[1]] == 'X' and current_positions[position[0]][position[1]] == 'E') and piece is not None and piece.piece_type == chess.ROOK):
                 ROOK = 1
-                ROOK_SQUARE = square
+                ROOK_ROW = position[0]
+                ROOK_COL = position[1]
             if ((previous_positions[position[0]][position[1]] == 'E' and current_positions[position[0]][position[1]] == 'X') and board.piece_at(square) is None):
                 two_change += 1
-    if king == 1 and rook == 1 and two_change == 2 and (king_square == chess.square(0, 4) and rook_square == chess.square(0, 7)):
-        if rook_square == chess.square(0, 7) and king_square == chess.square(0, 4):
-            move = chess.Move.from_uci("e1g1")
-        elif rook_square == chess.square(0, 0) and king_square == chess.square(0, 4):
-            move = chess.Move.from_uci("e1c1")
-    if KING == 1 and ROOK == 1 and two_change == 2 and (KING_SQUARE == chess.square(7, 4) and ROOK_SQUARE == chess.square(7, 7)):
-        if ROOK_SQUARE == chess.square(7, 7) and KING_SQUARE == chess.square(7, 4):
+    if king == 1 and rook == 1 and two_change == 2 and (king_row == 0 and rook_row == 0):
+        if rook_col == 7 and king_col == 4:
             move = chess.Move.from_uci("e8g8")
-        elif ROOK_SQUARE == chess.square(7, 0) and KING_SQUARE == chess.square(7, 4):
+        elif rook_col == 0 and king_col == 4:
             move = chess.Move.from_uci("e8c8")
+    if KING == 1 and ROOK == 1 and two_change == 2 and (KING_ROW == 7 and ROOK_ROW == 7):
+        if ROOK_COL == 7 and KING_COL == 4:
+            move = chess.Move.from_uci("e1g1")
+        elif ROOK_COL == 0 and KING_COL == 4:
+            move = chess.Move.from_uci("e1c1")
     if move in board.legal_moves:
         board.push(move)
         print(board)
@@ -331,8 +319,9 @@ def detect_passant(current_positions, previous_positions, changed_coordinates):
     move_1 = 0
     pawn_row_1 = pawn_col_1 = pawn_row_2 = pawn_col_2 = end_col = None
     for position in changed_coordinates:
-        row, col = position
-        square = rc_to_square(row, col)
+        row = 7 - position[0]
+        col = position[1]
+        square = chess.square(col, row)
         piece = board.piece_at(square)
         if ((previous_positions[position[0]][position[1]] == 'X' and current_positions[position[0]][position[1]] == 'E') and piece is not None and piece.piece_type == chess.PAWN):
             if move_1 == 0:
@@ -350,9 +339,9 @@ def detect_passant(current_positions, previous_positions, changed_coordinates):
         return True
     if pawn_row_1 == pawn_row_2:
         if pawn_col_1 == end_col:
-            from_square = rc_to_square(pawn_row_1, pawn_col_2)
+            from_square = chess.square(pawn_col_2, 7 - pawn_row_1)
         elif pawn_col_2 == end_col:
-            from_square = rc_to_square(pawn_row_2, pawn_col_1)
+            from_square = chess.square(pawn_col_1, 7 - pawn_row_2)
     if from_square is not None:
         move = chess.Move(from_square, to_square)
     if move in board.legal_moves:
@@ -380,9 +369,9 @@ def check_for_move():
         for coord in changed_coordinates:
             r, c = coord
             if previous_positions[r][c] == 'E' and current_positions[r][c] == 'X':
-                to_square = rc_to_square(r, c)
+                to_square = chess.square(c, 7 - r)
             elif previous_positions[r][c] == 'X' and current_positions[r][c] == 'E':
-                from_square = rc_to_square(r, c)
+                from_square = chess.square(c, 7 - r)
         if from_square is None or to_square is None:
             print("Could not determine from/to squares.")
             skip_move = 1
@@ -392,8 +381,7 @@ def check_for_move():
         if move in board.legal_moves:
             piece = board.piece_at(from_square)
             print("Detected move:", move)
-            row_2, col_2 = square_to_rc(to_square)
-            if piece and piece.piece_type == chess.PAWN and ((row_2 == 0) or (row_2 == 7)):
+            if piece and piece.piece_type == chess.PAWN and ((chess.square_rank(to_square) == 0) or (chess.square_rank(to_square) == 7)):
                 move2 = chess.Move(from_square, to_square, promotion=chess.QUEEN)
                 board.push(move2)
                 print(board)
@@ -406,7 +394,7 @@ def check_for_move():
                 print("broken move:", e)
                 skip_move = 1
         else:
-            print("Illegal move detected!", move)
+            print("Illegal move detected!")
             skip_move = 1
     elif len(changed_coordinates) == 0:
         print("no changes")
@@ -432,32 +420,27 @@ def check_for_move():
         previous_characteristics = current_characteristics
         previous_hist = hist_images
 
+
+"""
 def determine_move():
-    engine.analyse(board, chess.engine.Limit(time=0.1))
+    info = engine.analyse(board, chess.engine.Limit(time=0.1))
     result = engine.play(board, chess.engine.Limit(time=1))
     print("Best move:", result.move)
     board.push(result.move)
-    return result.move
-
-class arm:
-    def __init__(self):
-        pass
-
+"""
 initialize_camera()
-initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260115_19_21_26_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_52_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_53_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_54_Pro.jpg"),
-                                             cv2.imread("C:\\Chess_Images\\WIN_20260115_19_26_55_Pro.jpg")
+initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260109_20_58_57_Pro.jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260109_20_58_58_Pro (2).jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260109_20_58_58_Pro.jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260109_20_59_00_Pro.jpg"),
+                                             cv2.imread("C:\\Chess_Images\\WIN_20260109_20_59_01_Pro.jpg")
                                             ])
 
-"""
+
 starting_values()
 while True:
     check_for_move()
 
-
-"""
 
 
 
@@ -496,9 +479,9 @@ def determine_positions():
 
 
 
-"""
 
-original_image = take_pictures()[0]
+
+original_image = take_picture()
 warped_image = warp_board(original_image)
 if original_image is None:
     print("Error: Could not capture image.")
@@ -510,59 +493,6 @@ print("Intensity: ")
 image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2GRAY)
 hsv_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
 square_size = image.shape[0] // 8
-
-
-x_start = 0 * square_size
-y_start = 0 * square_size
-mapped_row = map_range(0, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 0X0", square)
-
-x_start = 7 * square_size
-y_start = 7 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 7x7", square)
-
-x_start = 7 * square_size
-y_start = 0 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 7X0", square)
-
-x_start = 0 * square_size
-y_start = 7 * square_size
-mapped_row = map_range(0, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 0X7", square)
-
-x_start = 3 * square_size
-y_start = 0 * square_size
-mapped_row = map_range(3, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 3X0", square)
-
-x_start = 7 * square_size
-y_start = 1 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(1, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 7X1", square)
-
-x_start = 3 * square_size
-y_start = 7 * square_size
-mapped_row = map_range(3, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5]
-cv2.imshow("Square 3X7", square)
-cv2.waitKey(0)
-
-"""
 
 
 
@@ -590,7 +520,7 @@ print("5, 6: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.coun
 x_start = 7 * square_size
 y_start = 7 * square_size
 square = image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv27.GaussianBlur(square, (5, 5), 0)
+blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
