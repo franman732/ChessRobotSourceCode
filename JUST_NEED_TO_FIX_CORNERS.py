@@ -11,7 +11,7 @@ import ast
 
 from datetime import datetime
 
-def print_nathan(*objects, sep=' ', end='\n', file=None, flush=False):
+def print_timestamped(*objects, sep=' ', end='\n', file=None, flush=False):
     # Create timestamp like " 9:25:15 PM" (fixed width)
     timestamp = datetime.now().strftime("%I:%M:%S %p").lstrip("0")
     timestamp = f"{timestamp:>11}"  # force constant width
@@ -32,10 +32,10 @@ def timed_call(fn, *args, name=None):
     start = time.perf_counter()
     result = fn(*args)
     end = time.perf_counter()
-    print_nathan(f"{name or fn.__name__} took {(end - start) * 1000:.2f} ms")
+    print_timestamped(f"{name or fn.__name__} took {(end - start) * 1000:.2f} ms")
     return result
 
-arduino = serial.Serial(port='COM8', baudrate=9600, timeout=1) # timeout = 1 means 1 second; 1 is right arm, 0 is left arm, 2 is tradeoff arm.
+arduino = serial.Serial(port='COM8', baudrate=9600, timeout=100) # timeout = 1 means 1 second; 1 is right arm, 0 is left arm, 2 is tradeoff arm.
 
 engine = chess.engine.SimpleEngine.popen_uci("C:\\Patricia\\patricia_v3.exe") #  Stockfish\\stockfish-windows-x86-64-avx2"p
 board = chess.Board()
@@ -360,7 +360,7 @@ def determine_positions():
                 else: 
                     positions[i][row][col] = 'E'
                 diff[i][row][col] = total_dif
-    #print_nathan("Differences:", diff)
+    #print_timestamped("Differences:", diff)
 
     for row in range(8):
         for col in range(8):
@@ -372,7 +372,7 @@ def determine_positions():
                 true_positions[row][col] = 'X'
             else:
                 true_positions[row][col] = 'E'
-    print_nathan("Current positions:\n", true_positions)
+    print_timestamped("Current positions:\n", true_positions)
     return true_positions
 
 def starting_values():
@@ -416,25 +416,25 @@ def determine_capture(current_characteristics, previous_characteristics, current
                     piece = board.piece_at(from_square)
                     if piece and piece.piece_type == chess.PAWN and ((row_2 == 0) or (row_2 == 7)):
                         move2 = chess.Move(from_square, to_square, promotion=chess.QUEEN)
-                        print_nathan("Pawn promotion capture:", move2)
+                        print_timestamped("Pawn promotion capture:", move2)
                     if move2 in board.legal_moves:
                         try:
                             if (previous_positions[row][col] == 'X') and (current_positions[row][col] == 'E'):
-                                print_nathan("Detected capture move:", move2)
+                                print_timestamped("Detected capture move:", move2)
                                 board.push(move2)
-                                print_nathan(board)
+                                print_timestamped(board)
                                 return False
                             else:           
-                                print_nathan("False capture")
+                                print_timestamped("False capture")
                         except Exception as e:
-                            print_nathan("broken move:", e)
+                            print_timestamped("broken move:", e)
                     else:
-                        print_nathan("not legal: ", move2)
+                        print_timestamped("not legal: ", move2)
                 else:
-                    print_nathan("Mean not strong enough for capture: ", )
-                    print_nathan("Hist: ", cv2.compareHist(prev_hist, curr_hist, cv2.HISTCMP_BHATTACHARYYA))
-                    print_nathan("L: ", abs(prev_L - new_L), "A: ", abs(prev_A - new_A), "B: ", abs(prev_B - new_B))
-                    print_nathan("move: ", move2)
+                    print_timestamped("Mean not strong enough for capture: ", )
+                    print_timestamped("Hist: ", cv2.compareHist(prev_hist, curr_hist, cv2.HISTCMP_BHATTACHARYYA))
+                    print_timestamped("L: ", abs(prev_L - new_L), "A: ", abs(prev_A - new_A), "B: ", abs(prev_B - new_B))
+                    print_timestamped("move: ", move2)
     return True
 
 def detect_castle(current_positions, previous_positions, changed_coordinates):
@@ -486,12 +486,12 @@ def detect_castle(current_positions, previous_positions, changed_coordinates):
             move = chess.Move(4, 6)
     if move in board.legal_moves:
         board.push(move)
-        print_nathan(board)
-        print_nathan("Detected castle move:", move)
+        print_timestamped(board)
+        print_timestamped("Detected castle move:", move)
         return False
     else:
-        print_nathan("Not legal castle: ", move, "two_change:", two_change, "king:", king, "rook:", rook, "KING:", KING, "ROOK:", ROOK)
-        print_nathan("rook_square:", rook_square, "king_square:", king_square, "ROOK_SQUARE:", ROOK_SQUARE, "KING_SQUARE:", KING_SQUARE)
+        print_timestamped("Not legal castle: ", move, "two_change:", two_change, "king:", king, "rook:", rook, "KING:", KING, "ROOK:", ROOK)
+        print_timestamped("rook_square:", rook_square, "king_square:", king_square, "ROOK_SQUARE:", ROOK_SQUARE, "KING_SQUARE:", KING_SQUARE)
         return True
 
 def detect_passant(current_positions, previous_positions, changed_coordinates):
@@ -515,7 +515,7 @@ def detect_passant(current_positions, previous_positions, changed_coordinates):
             to_square = square
             end_col = position[1]
     if pawn_row_1 is None or pawn_row_2 is None or pawn_col_1 is None or pawn_col_2 is None or to_square is None:
-        print_nathan("Could not determine passant squares.")
+        print_timestamped("Could not determine passant squares.")
         return True
     if pawn_row_1 == pawn_row_2:
         if pawn_col_1 == end_col:
@@ -526,10 +526,10 @@ def detect_passant(current_positions, previous_positions, changed_coordinates):
         move = chess.Move(from_square, to_square)
     if move in board.legal_moves:
         board.push(move)
-        print_nathan("Detected en passant move:", move)
-        print_nathan(board)
+        print_timestamped("Detected en passant move:", move)
+        print_timestamped(board)
         return False
-    print_nathan("Not legal en passant:", move)
+    print_timestamped("Not legal en passant:", move)
     return True
 
 def check_for_move():
@@ -555,50 +555,50 @@ def check_for_move():
             elif previous_positions[r][c] == 'X' and current_positions[r][c] == 'E':
                 from_square = rc_to_square(r, c)
         if from_square is None or to_square is None:
-            print_nathan("Could not determine from/to squares.")
+            print_timestamped("Could not determine from/to squares.")
             skip_move = 1
             return
         else:
             move = chess.Move(from_square, to_square)
         if move in board.legal_moves:
             piece = board.piece_at(from_square)
-            print_nathan("Detected move:", move)
+            print_timestamped("Detected move:", move)
             row_2, col_2 = square_to_rc(to_square)
             if piece and piece.piece_type == chess.PAWN and ((row_2 == 0) or (row_2 == 7)):
                 move2 = chess.Move(from_square, to_square, promotion=chess.QUEEN)
                 board.push(move2)
-                print_nathan(board)
-                print_nathan("Pawn promotion")
+                print_timestamped(board)
+                print_timestamped("Pawn promotion")
                 return
             try:
                 board.push(move)
-                print_nathan(board)
+                print_timestamped(board)
             except Exception as e:
-                print_nathan("broken move:", e)
+                print_timestamped("broken move:", e)
                 skip_move = 1
         else:
-            print_nathan("Illegal move detected!", move)
+            print_timestamped("Illegal move detected!", move)
             skip_move = 1
     elif len(changed_coordinates) == 0:
-        print_nathan("no changes")
+        print_timestamped("no changes")
     elif len(changed_coordinates) == 1:
-        print_nathan("Single change detected")
+        print_timestamped("Single change detected")
         if determine_capture(current_characteristics, previous_characteristics, current_positions, previous_positions, previous_hist, changed_coordinates[0][0], changed_coordinates[0][1]):
-            print_nathan("No bueno")
+            print_timestamped("No bueno")
             skip_move = 1
     elif len(changed_coordinates) == 3:
         if detect_passant(current_positions, previous_positions, changed_coordinates):
-            print_nathan("Fake Passant")
+            print_timestamped("Fake Passant")
             skip_move = 1
     elif len(changed_coordinates) == 4:
         if detect_castle(current_positions, previous_positions, changed_coordinates):
-            print_nathan("Fake Castle")
+            print_timestamped("Fake Castle")
             skip_move = 1
     else:
-        print_nathan("Multiple changes detected, unable to determine move.")
+        print_timestamped("Multiple changes detected, unable to determine move.")
         skip_move = 1
     if skip_move == 0:
-        print_nathan("We keeping dis one")
+        print_timestamped("We keeping dis one")
         previous_positions = current_positions
         previous_characteristics = current_characteristics
         previous_hist = hist_images # This is just a bunch of reasons the game would end. 
@@ -611,27 +611,35 @@ def check_for_move():
 def determine_move():
     engine.analyse(board, chess.engine.Limit(time=0.1))
     result = engine.play(board, chess.engine.Limit(time=1))
-    print_nathan("Best move:", result.move)
+    print_timestamped("Best move:", result.move)
     from_square = chess_square_to_robot_index(result.move.from_square)
     to_square = chess_square_to_robot_index(result.move.to_square)
     return from_square, to_square, result.move
 
-def send_to_arduino(data, label): # 1 is right arm, 0 is left arm
-    print_nathan("label:", label, "Sending to Arduino:", data)
-    for value in data:
-        arduino.write(bytes(f"{value},", 'utf-8'))
-    message = arduino.readline().decode().strip()
-    if message:
-        received_list = ast.literal_eval(message)
-        print_nathan("Received:", message)
-        #print_nathan("data:", data[:6])
-        if received_list == data[:6]: # 6 to not include arm number at end of data
-            print_nathan("Arduino acknowledged receipt of data.")
+def send_to_arduino(data, label, list = True, not_first = False): # 1 is right arm, 0 is left arm
+    resend_attempts = 0
+    print_timestamped("label:", label, "Sending to Arduino:", data)
+    if list == True:
+        arduino.write((",".join(map(str, data)) + "\n").encode())
+        message = arduino.readline().decode().strip()
+        if message:
+            received_list = ast.literal_eval(message)
+            print_timestamped("Received:", message)
+            #print_timestamped("data:", data[:6])
+            if received_list == data[:6]: # 6 to not include arm number at end of data
+                print_timestamped("Arduino acknowledged receipt of data.")
+            else:
+                if resend_attempts < 3:
+                    print_timestamped("Arduino response does not match sent data. Resending.")
+                    send_to_arduino(data, label)
+                else:
+                    print_timestamped("Arduino did not acknowledge receipt of data after 3 attempts.")
         else:
-            print_nathan("Arduino response does not match sent data. Resending.")
-            send_to_arduino(data, label)
+            print_timestamped("No message received")
     else:
-        print_nathan("No message received")
+        arduino.write(bytes(f"{data},", 'utf-8')) # Just in case I want to send something that is not a list
+        message = arduino.readline().decode().strip()
+        print_timestamped("Received:", message)
 
 def determine_arm_to_use(square): # 1 is right arm, 0 is left arm
     file = square % 8
@@ -650,7 +658,7 @@ def chess_square_to_robot_index(square):
     return robot_row * 8 + robot_col
 
 def move_to_exchange_position(arm, type): #Once at default position, moves arms to exchange position for pick or place, and returns to default, type is "pick" or "place"
-    print_nathan("move_to_exchange_position: arm:", arm, "type:", type)
+    print_timestamped("move_to_exchange_position: arm:", arm, "type:", type)
     global default_servo_positions,  Tradeoff_left_arm_positions, Tradeoff_right_arm_positions, Tradeoff_right_arm_highest_position, tradeoff_left_arm_highest_position
     positions = default_servo_positions.copy()
     positions.append(arm)
@@ -716,7 +724,7 @@ def move_to_exchange_position(arm, type): #Once at default position, moves arms 
     time.sleep(arduino_delay)
 
 def tradeoff_arm_grab(from_arm, type): # Makes tradeoff arm grab or place piece, starting from default position and ending at default position
-    print_nathan("tradeoff_arm_grab: from_arm:", from_arm, "type:", type)
+    print_timestamped("tradeoff_arm_grab: from_arm:", from_arm, "type:", type)
     global tradeoff_arm_default_positions, Tradeoff_arm_tradeoff_left, Tradeoff_arm_tradeoff_right
     if from_arm == 1:
         tradeoff_positions = Tradeoff_arm_tradeoff_right.copy()
@@ -771,7 +779,7 @@ def move_tradeoff_arm(from_arm, to_arm): # Moves arm to tradeoff position for pi
 
 
 def exchange_pieces(from_arm, to_arm): # Starts with arm having piece already picked upf
-    print_nathan("Exchanging pieces from arm", from_arm, "to arm", to_arm)
+    print_timestamped("Exchanging pieces from arm", from_arm, "to arm", to_arm)
     global default_servo_positions
     move_to_exchange_position(from_arm, "place")
     time.sleep(0.5)
@@ -796,7 +804,7 @@ def determine_x_y(square_number, arm): # 1 is right arm, 0 is left arm
 def determine_servo_6(square_number, arm, servo_baselines):
     x, y = determine_x_y(square_number, arm)
     angle = np.atan2(y, x)
-    #print_nathan("angle:", angle)
+    #print_timestamped("angle:", angle)
     return (map_range_clamped(angle, -np.pi/2, np.pi/2, -333, 333) + servo_baselines[5])
 
 def determine_if_too_far(target_x, target_y, skip):
@@ -811,7 +819,7 @@ def determine_wrist_tilt(servo_5_val, servo_4_val, servo_baselines):
     return max(min(129 - ((servo_5_val - servo_baselines[4]) + (servo_4_val - servo_baselines[3])), 1000), 0)
 
 def determine_angles(target_x, target_y, servo_baselines):
-    #print_nathan("target_x:", target_x, "target_y:", target_y)
+    #print_timestamped("target_x:", target_x, "target_y:", target_y)
     gamma = np.arctan2(target_y, target_x) 
     alpha = np.arccos(np.clip((target_x**2 + target_y**2 + L1**2 - L2**2) / (2 * L1 * np.sqrt(target_x**2 + target_y**2)), -1, 1))
     beta = np.arccos(np.clip((L1**2 + L2**2 - target_x**2 - target_y**2) / (2 * L1 * L2), -1, 1))
@@ -821,7 +829,7 @@ def determine_angles(target_x, target_y, servo_baselines):
     Rtheta2 = np.pi - beta
     Ltheta2 = beta - np.pi
 
-    #print_nathan("Rtheta1 (shoulder):", np.degrees(Rtheta1), "Ltheta1 (shoulder):", np.degrees(Ltheta1), "Rtheta2 (elbow):", np.degrees(Rtheta2), "Ltheta2 (elbow):", np.degrees(Ltheta2))
+    #print_timestamped("Rtheta1 (shoulder):", np.degrees(Rtheta1), "Ltheta1 (shoulder):", np.degrees(Ltheta1), "Rtheta2 (elbow):", np.degrees(Rtheta2), "Ltheta2 (elbow):", np.degrees(Ltheta2))
 
     zero_1 = servo_baselines[4]
     zero_2 = servo_baselines[3]
@@ -835,13 +843,13 @@ def determine_angles(target_x, target_y, servo_baselines):
     Ldegree2 = (Ltheta2 * 180) / np.pi
 
     # Everything 1 is shoulder, everything 2 is elbow
-    #print_nathan("Pre_clamp: Rdegree1 (shoulder):", Rdegree1 + zero_1_degrees, "Ldegree1 (shoulder):", Ldegree1 + zero_1_degrees, "Rdegree2 (elbow):", Rdegree2 + zero_2_degrees, "Ldegree2 (elbow):", Ldegree2 + zero_2_degrees)
+    #print_timestamped("Pre_clamp: Rdegree1 (shoulder):", Rdegree1 + zero_1_degrees, "Ldegree1 (shoulder):", Ldegree1 + zero_1_degrees, "Rdegree2 (elbow):", Rdegree2 + zero_2_degrees, "Ldegree2 (elbow):", Ldegree2 + zero_2_degrees)
     RFinal1 = map_range_clamped(zero_1_degrees + Rdegree1, 0 , 180, 0, 1000)
     RFinal2 = map_range_clamped(zero_2_degrees + Rdegree2, 0, 180, 0, 1000)
 
     LFinal1 = map_range_clamped(zero_1_degrees + Ldegree1, 0 , 180, 0, 1000)
     LFinal2 = map_range_clamped(zero_2_degrees + Ldegree2, 0, 180, 0, 1000)
-    #print_nathan("RFinal1 (shoulder):", RFinal1, "LFinal1 (shoulder):", LFinal1, "RFinal2 (elbow):", RFinal2, "LFinal2 (elbow):", LFinal2)
+    #print_timestamped("RFinal1 (shoulder):", RFinal1, "LFinal1 (shoulder):", LFinal1, "RFinal2 (elbow):", RFinal2, "LFinal2 (elbow):", LFinal2)
     return LFinal1, LFinal2, RFinal1, RFinal2
 
 def score_squares(square):
@@ -858,7 +866,7 @@ def score_squares(square):
     right_piece = board.piece_at(chess_square_to_robot_index(right_square)) if right_square is not None else None
     up_piece = board.piece_at(chess_square_to_robot_index(up_square)) if up_square is not None else None
     down_piece = board.piece_at(chess_square_to_robot_index(down_square)) if down_square is not None else None
-    #print_nathan("left_piece:", left_piece, "right_piece:", right_piece, "up_piece:", up_piece, "down_piece:", down_piece)
+    #print_timestamped("left_piece:", left_piece, "right_piece:", right_piece, "up_piece:", up_piece, "down_piece:", down_piece)
     horizontal_score = (piece_values[left_piece.symbol()] if left_piece is not None else 0) + (piece_values[right_piece.symbol()] if right_piece is not None else 0)
     vertical_score = (piece_values[up_piece.symbol()] if up_piece is not None else 0) + (piece_values[down_piece.symbol()] if down_piece is not None else 0)
 
@@ -870,7 +878,7 @@ def score_squares(square):
         return "equal"
 
 def determine_wrist_rotation(servo_6_val, direction, square_number): # Type in this case is "empty" or "piece", and movement is "up" or "down" 
-        #print_nathan("direction:", direction, "servo_6_val:", servo_6_val, "potential 1", servo_6_val - 333, "potential 2", servo_6_val + 333)
+        #print_timestamped("direction:", direction, "servo_6_val:", servo_6_val, "potential 1", servo_6_val - 333, "potential 2", servo_6_val + 333)
         if ((square_number % 8 == 0 or square_number % 8 == 7) and (0 < (square_number // 8) < 7)): # If piece is on far left or far right, rotate wrist to face inwards to prevent gripper from breaking on metal
             return servo_6_val
 
@@ -933,7 +941,7 @@ def move_downwards(target_x, target_height, servo_6_val, square_num, type, arm, 
         send_to_arduino(positions, "move_downwards")
         
     time.sleep(1.2)
-    #print_nathan("finished moving downwards, now sleeping for 2 seconds TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")
+    #print_timestamped("finished moving downwards, now sleeping for 2 seconds TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")
 
 
 """    for i in range(5):
@@ -963,7 +971,7 @@ def move_downwards(target_x, target_height, servo_6_val, square_num, type, arm, 
         positions[0] = default_servo_positions[0] # opens gripper once down
         send_to_arduino(positions, "move_downwards")
     time.sleep(1.5)
-    print_nathan("finished moving downwards, now sleeping for 2 seconds TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")"""
+    print_timestamped("finished moving downwards, now sleeping for 2 seconds TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")"""
 
 
 def move_upwards(target_x, target_height, servo_6_val, square_num, type, arm, servo_baselines, servo_2_direction, vertical_offset): # this function goes from lowest position up to highest position
@@ -994,7 +1002,7 @@ def move_upwards(target_x, target_height, servo_6_val, square_num, type, arm, se
         new_height += 1
 
         LFinal1, LFinal2, RFinal1, RFinal2 = determine_angles(target_x, new_height, servo_baselines)
-        print_nathan("new_target_x:", target_x, "new_height:", new_height, "UPWARDS")
+        print_timestamped("new_target_x:", target_x, "new_height:", new_height, "UPWARDS")
 
         if type == "pickup":
             positions.append(1000) # gripper
@@ -1040,7 +1048,7 @@ def move_to_default(arm, type, setup = False):
         return
 
 def move_arm_to_square(square_num, type, arm): # This function starts the entire movement section; starts with arm at default, grabs piece, returns to default
-    #print_nathan("move_arm_to_square: we are moving arm:", arm, "to square:", square_num)
+    #print_timestamped("move_arm_to_square: we are moving arm:", arm, "to square:", square_num)
     if arm == 1:
         servo_baselines = servo_baselines_right
     elif arm == 0:
@@ -1053,17 +1061,17 @@ def move_arm_to_square(square_num, type, arm): # This function starts the entire
 
     move_to_highest_position(target_x, target_height, servo_6_val, square_num, type, arm, servo_baselines, servo_2_direction, vertical_offset)
     move_downwards(target_x, target_height, servo_6_val, square_num, type, arm, servo_baselines, servo_2_direction)
-    #print_nathan("finished moving downwards, now moving upwards TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")
+    #print_timestamped("finished moving downwards, now moving upwards TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")
     time.sleep(.5)
     move_upwards(target_x, target_height, servo_6_val, square_num, type, arm, servo_baselines, servo_2_direction, vertical_offset)
-    #print_nathan("finished moving upwards, now moving to default TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")
+    #print_timestamped("finished moving upwards, now moving to default TRANSITION TRANSITION TRANSITION TRANSITION TRANSTITION TRANSITION TRANSITION TRANSITION TRANSITION TRANSITION")
     time.sleep(.5)
     move_to_default(arm, type)
 
 def move_arm_to_remove_piece(arm, side = None): # This function starts from default position with piece, moves to capture position and drops off piece, and then moves back to default position; based off arm passed, it determines capture positions but does not do transfer
     global capture_positions_right, capture_positions_left, default_servo_positions, Tradeoff_arm_tradeoff_left, Tradeoff_arm_tradeoff_right, tradeoff_arm_default_positions
     positions = []
-    print_nathan("move_arm_to_remove_piece: we are removing piece with arm:", arm, "and capture positions are:", capture_positions_right if arm == 1 else capture_positions_left)
+    print_timestamped("move_arm_to_remove_piece: we are removing piece with arm:", arm, "and capture positions are:", capture_positions_right if arm == 1 else capture_positions_left)
     if (arm == 0 or arm == 1):
         default_positions = default_servo_positions.copy()
         positions = default_servo_positions.copy()
@@ -1078,7 +1086,7 @@ def move_arm_to_remove_piece(arm, side = None): # This function starts from defa
             capture_positions = capture_positions_transfer_right.pop(0)
         elif side == "left":
             capture_positions = capture_positions_transfer_left.pop(0)
-    print_nathan("move_arm_to_remove_piece: capture positions are:", capture_positions)
+    print_timestamped("move_arm_to_remove_piece: capture positions are:", capture_positions)
     positions.append(arm)
     positions[0] = 1000 # closes gripper to keep piece grabbed
     positions[1] = capture_positions[1] # Rotates wrist to capture position
@@ -1114,12 +1122,12 @@ def capture(from_square, from_arm): # Starts from defualt, picks up piece, moves
     global capture_positions_right, capture_positions_left, tradeoff_arm_default_positions, default_servo_positions
     move_arm_to_square(from_square, "pickup", from_arm)
 
-    print_nathan("we are in capture and from_arm is:", from_arm, "and capture positions are:", capture_positions_right if from_arm == 1 else capture_positions_left)
+    print_timestamped("we are in capture and from_arm is:", from_arm, "and capture positions are:", capture_positions_right if from_arm == 1 else capture_positions_left)
     if from_arm == 1:
         capture_positions = capture_positions_right
     elif from_arm == 0:
         capture_positions = capture_positions_left
-    print_nathan("capture positions are:", capture_positions)
+    print_timestamped("capture positions are:", capture_positions)
     if len(capture_positions) != 0:
         move_arm_to_remove_piece(from_arm)
         return
@@ -1146,21 +1154,21 @@ def capture(from_square, from_arm): # Starts from defualt, picks up piece, moves
     
 
 def determine_type_of_robot_move(move):
-    print_nathan(move)
+    print_timestamped(move)
     if move.promotion is True:
-        print_nathan("Move is promotion:", move, "promotion thingi:", move.promotion)
+        print_timestamped("Move is promotion:", move, "promotion thingi:", move.promotion)
         return "promotion"
     elif board.is_en_passant(move) is True:
-        print_nathan("Move is en passant:", move, "en passant thingi:", board.is_en_passant(move))
+        print_timestamped("Move is en passant:", move, "en passant thingi:", board.is_en_passant(move))
         return "en passant"
     elif board.is_capture(move) is True:
-        print_nathan("Move is capture:", move, "capture thingi:", board.is_capture(move))
+        print_timestamped("Move is capture:", move, "capture thingi:", board.is_capture(move))
         return "capture"
     elif board.is_castling(move) is True:
-        print_nathan("Move is castling:", move, "castling thingi:", board.is_castling(move))
+        print_timestamped("Move is castling:", move, "castling thingi:", board.is_castling(move))
         return "castling"
     else:
-        print_nathan("move is normal:", move)
+        print_timestamped("move is normal:", move)
         return "normal"
     
 def determine_if_swap_needed(from_arm, to_arm):
@@ -1250,12 +1258,7 @@ def initialize_game():
                                                 cv2.imread("C:\\Chess_Images\\WIN_20260310_19_48_51_Pro.jpg")
                                                 ])
     starting_values()
-
-    move_to_default(2, "pickup", True)
-    time.sleep(.035)
-    move_to_default(1, "pickup", True)
-    time.sleep(.035)
-    move_to_default(0, "pickup", True)
+    send_to_arduino(10, "initialize game", False, True) # Signal to arduino to move arms to default
 
 initialize_game()
 
@@ -1267,28 +1270,28 @@ while board.is_checkmate() == False and board.is_stalemate() == False:
         move_type = determine_type_of_robot_move(m)
         swap = determine_if_swap_needed(from_arm, to_arm)
 
-        print_nathan("Move type:", move_type, "From square:", f, "To square:", t, "From arm:", from_arm, "To arm:", to_arm, "Swap needed:", swap)
+        print_timestamped("Move type:", move_type, "From square:", f, "To square:", t, "From arm:", from_arm, "To arm:", to_arm, "Swap needed:", swap)
 
         if move_type == "normal":
-            print_nathan("normal move")
+            print_timestamped("normal move")
             normal_move(f, t, from_arm, to_arm, swap)
         elif move_type == "capture":
-            print_nathan("capture move")
+            print_timestamped("capture move")
             capture_move(f, t, from_arm, to_arm, swap)
         elif move_type == "en passant":
-            print_nathan("en passant move")
+            print_timestamped("en passant move")
             en_passant_move(f, t, from_arm, to_arm, swap)
         elif move_type == "castling":
-            print_nathan("castle move")
+            print_timestamped("castle move")
             castle_move(f, t, from_arm, to_arm, swap)
         elif move_type == "promotion":
-            print_nathan("promotion move")
+            print_timestamped("promotion move")
             promotion_move(f, t, from_arm, to_arm, swap, m)
 else:
     if board.is_checkmate():
-        print_nathan("Checkmate! Winner:", "Black" if board.turn == "Black" else "White")
+        print_timestamped("Checkmate! Winner:", "Black" if board.turn == "Black" else "White")
     elif board.is_stalemate():
-        print_nathan("Stalemate! It's a draw.")
+        print_timestamped("Stalemate! It's a draw.")
 
 
 
@@ -1316,12 +1319,12 @@ while True:
 original_image = take_pictures()[0]
 warped_image = warp_board(original_image)
 if original_image is None:
-    print_nathan("Error: Could not capture image.")
+    print_timestamped("Error: Could not capture image.")
 cv2.imshow("Original", original_image)
 cv2.imshow("Warped", warped_image)
 cv2.waitKey(0)
-print_nathan("dimensions:", original_image.shape)
-print_nathan("Intensity: ")
+print_timestamped("dimensions:", original_image.shape)
+print_timestamped("Intensity: ")
 image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2GRAY)
 hsv_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
 square_size = image.shape[0] // 8
@@ -1405,7 +1408,7 @@ blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(5, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(5, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_nathan("4, 4: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("4, 4: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 x_start = 5 * square_size
 y_start = 6 * square_size
@@ -1414,7 +1417,7 @@ blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(7, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(6, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_nathan("5, 6: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("5, 6: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 x_start = 7 * square_size
 y_start = 7 * square_size
@@ -1423,7 +1426,7 @@ blurred_image = cv27.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_nathan("7, 7: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("7, 7: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 x_start = 0 * square_size
 y_start = 0 * square_size
@@ -1432,7 +1435,7 @@ blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(0, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(0, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_nathan("0, 0: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("0, 0: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 x_start = 7 * square_size
 y_start = 0 * square_size
@@ -1441,7 +1444,7 @@ blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(0, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_nathan("7, 0: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("7, 0: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 x_start = 0 * square_size
 y_start = 7 * square_size
@@ -1450,7 +1453,7 @@ blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 hsv = hsv_image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(0, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
 h, w, _ = hsv.shape
 center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_nathan("0, 7: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("0, 7: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 
 
@@ -1458,27 +1461,27 @@ hsv = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
 square = hsv[4 * square_size:4 * square_size + square_size, 4 * square_size:4 * square_size + square_size]
 cv2.imshow("Square 4x4", square)
 avg_v = cv2.mean(hsv[:, :, 2])[0]
-print_nathan("4x4", avg_v)
+print_timestamped("4x4", avg_v)
 
 square = hsv[5 * square_size:4 * square_size + square_size, 6 * square_size:4 * square_size + square_size]
 cv2.imshow("Square 5x6", square)
 cv2.waitKey(0)
 avg_v = cv2.mean(hsv[:, :, 2])[0]
-print_nathan("5x6", avg_v)
+print_timestamped("5x6", avg_v)
 
 
 x_start = 4 * square_size
 y_start = 4 * square_size
 square = image[y_start:y_start + square_size, x_start:x_start + square_size]
 mean_intensity = cv2.mean(square)[0]
-print_nathan(mean_intensity)
-print_nathan(", ")
+print_timestamped(mean_intensity)
+print_timestamped(", ")
 
 x_start = 5 * square_size
 y_start = 6 * square_size
 square = image[y_start:y_start + square_size, x_start:x_start + square_size]
 mean_intensity = cv2.mean(square)[0]
-print_nathan(mean_intensity)
+print_timestamped(mean_intensity)
 
 x_start = 4 * square_size
 y_start = 4 * square_size
@@ -1487,7 +1490,7 @@ cv2.imshow("Square 4,4", square,)
 cv2.waitKey(0)
 
 edges = cv2.Canny(blurred_image, 75, 225)
-print_nathan("4, 4: edges:", np.count_nonzero(edges) / edges.size) #, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("4, 4: edges:", np.count_nonzero(edges) / edges.size) #, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 
 
 
@@ -1500,5 +1503,5 @@ blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
 edges = cv2.Canny(blurred_image, 75, 225)
 cv2.imshow("Edges 5,6", edges)
 cv2.waitKey(0)
-print_nathan("6, 7: edges:", np.count_nonzero(edges) / edges.size) #, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+print_timestamped("6, 7: edges:", np.count_nonzero(edges) / edges.size) #, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
 """
