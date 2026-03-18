@@ -48,10 +48,10 @@ previous_board = None
 width = 750
 height = 750
 true_corners = np.float32([
-    [630, 216], # Top left
-    [1250, 229], # Top right
-    [1229, 861], # Bottom right
-    [622, 849], # Bottom left
+    [642, 220], # Top left
+    [1279, 220], # Top right
+    [1270, 867], # Bottom right
+    [644, 867], # Bottom left
 ])
 dst_pts = np.float32([
     [0, 0],
@@ -96,11 +96,11 @@ servo_baselines_left = [340, -50, 500, 509, 134, 500]  #Index 1, servo 2, actual
 default_servo_positions = [400, 495, 0, 274, 850, 511] #This is the default positions the servos reset to each time
 tradeoff_arm_default_positions = [0, 493, 862, 150, 140, 491]
 
-Tradeoff_arm_tradeoff_right = [0, 340, 879, 278, 639, 752] # Left and right here are from the perspective of the human
-Tradeoff_arm_tradeoff_left = [0, 613, 901, 313, 654, 250] #these are the positions for the tradeoff arm to be in to grab the pieces on the tradeoff platform
+Tradeoff_arm_tradeoff_right = [0, 350, 907, 329, 678, 752] # Left and right here are from the perspective of the human
+Tradeoff_arm_tradeoff_left = [0, 581, 920, 343, 685, 242] #these are the positions for the tradeoff arm to be in to grab the pieces on the tradeoff platform
 
-Tradeoff_right_arm_positions = [570, 235, 227, 381, 161, 237] # This is the position for the right arm to be in to tradeoff
-Tradeoff_left_arm_positions = [0, 700, 225, 444, 121, 765] # This is the position for the left arm to be in to tradeoff
+Tradeoff_right_arm_positions = [570, 249, 170, 458, 122, 235] # This is the position for the right arm to be in to tradeoff
+Tradeoff_left_arm_positions = [0, 694, 229, 430, 121, 752] # This is the position for the left arm to be in to tradeoff
 
 Tradeoff_right_arm_highest_position = [587, 240, 119, 473, 162, 240] # These are the highest positions for the arms to tradeoff so the tradeoff moves vertically and doesnt hit the other arm
 tradeoff_left_arm_highest_position = [677, 702, 72, 589, 121, 752] 
@@ -109,7 +109,7 @@ tradeoff_waiting_servo_5_position = 350 # Puts shoulder in waiting position to a
 arduino_delay = 1.1 #This is the delay in milliseconds between sending commands to the Arduino to give it ample time to interpret previous set of commands
         # 1 is right arm, 0 is left arm, 2 is tradeoff arm.
 x_offsets = [1, .5, -.5, -4.5, -3, 1, .5, 1, 
-             -0.5, -1.5, -1.5, -4, -3.5, -1.5, -1.7, -.5, 
+             -0.5, -1.5, -1.5, -4, -3.5, -1.35, -1.7, -.5, 
              -2, -2.5, -3, -4, -3.25, -3, -2.55, -1.9, 
              -2, -3.5, -3.5, -4, -2, -3.15, -2.9, -5, 
              -2.5, -2.9, -3.3, -3.75, -2.4, -3, -3, 0, 
@@ -117,20 +117,20 @@ x_offsets = [1, .5, -.5, -4.5, -3, 1, .5, 1,
              -.5, -1.7, -1.75, -4, -2, -1, -.5, .25, 
              1.75, 1, -1, -4, -2.5, 1.5, 1.5, 2.5] 
 
-y_offsets = [2.5, 1.25, 1, -1.25, -.5, -3, -1.75, -1.75, 
-             0, -1, -1, -2, 0, -1, .25, 0,
+y_offsets = [2.5, 1.25, .5, -1.25, -.5, -3, -1.75, -1.75, 
+             0, -1, -1, -2, 0, -.25, .25, 0,
              -1, -1.25, -1, -1, 0, .5, 1.25, 1.65,
              -1, -1, -.85, -1.25, -1, 0, .25, 1,
-             -0.5, -.5, -.75, -.25, 0, 0, 0, 0,
+             -0.5, -.5, -.75, -.75, 0, 0, 0, 0,
              0, 0, -.5, -.75, 0, 0, 0, -.3,
              -1.25, -1, -1.5, 0, -.5, 0, .5, 1,
              -7, -4.5, -1.75, .25, -.5, 1.75, 2, 4]
 
 target_y_list = [-5, -6, -7.5, -7, -6.75, -6.8, -5.3, -4.5,
-                -4.5, -5.3, -7, -7, -6, -6.5, -4.75, -3.75,
+                -4.5, -5.3, -7, -7, -6, -6, -4.75, -3.75,
                -4, -5, -6, -7, -6.5, -5.25, -4, -3.5,
                 -4, -5, -6, -7, -6.5, -5, -4, -2.5,
-                -4, -5, -6, -7, -6.5, -5, -4, 0,
+                -4, -5, -6, -7.5, -6.5, -5, -4, 0,
                 -4, -5, -6, -7.5, -6.5, -5.25, -4, -3.4,
                 -4.75, -5.5, -6.5, -7.5, -7, -6, -5, -4,
                 -5.5, -6.5, -7.25, -8, -7, -6, -5.5, -5.5]
@@ -139,7 +139,7 @@ additional_wrist_offsets = [0, 0, +4, +50, +45, 0, 0, 0,
                             0, 0, 0, +30, +25, 0, 0, 0,
                             0, 0, 0, +10, +12, 0, 0, 0,
                             0, 0, 0, +20, +12, 0, 0, 0,
-                            0, 0, 0, +10, 0, 0, 0, 0,
+                            0, 0, 0, +12, 0, 0, 0, 0,
                             0, 0, 0, +15, +30, 0, 0, 0,
                             0, 0, 0, +20, +50, 0, 0, 0,
                             0, 0, +20, +40, +55, +55, 0, 0] # 60
@@ -201,7 +201,7 @@ def hundredth_map_range(x, in_min, in_max, out_min, out_max):
     return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min, 4)
 
 def determine_offset(row, col, square_size):
-    const_min = 6
+    const_min = 4
     if col <= 3:
         x_min = map_range(col, 0, 3, 0 + const_min, square_size // 4)
         x_max = map_range(col, 0, 3, square_size // 2, 3 * square_size // 4)
@@ -1251,11 +1251,11 @@ def promotion_move(from_square, to_square, from_arm, to_arm, swap, move): # star
 def initialize_game():
     global initial_characteristics
     initialize_camera()
-    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260310_19_48_47_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260310_19_48_48_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260310_19_48_49_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260310_19_48_50_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260310_19_48_51_Pro.jpg")
+    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_09_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_10_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_11_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_12_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_13_Pro.jpg")
                                                 ])
     starting_values()
     send_to_arduino(10, "initialize game", False, True) # Signal to arduino to move arms to default
