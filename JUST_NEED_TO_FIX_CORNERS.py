@@ -35,7 +35,7 @@ def timed_call(fn, *args, name=None):
     print_timestamped(f"{name or fn.__name__} took {(end - start) * 1000:.2f} ms")
     return result
 
-arduino = serial.Serial(port='COM8', baudrate=9600, timeout=100) # timeout = 1 means 1 second; 1 is right arm, 0 is left arm, 2 is tradeoff arm.
+arduino = serial.Serial(port='COM8', baudrate=9600, timeout=5) # timeout = 1 means 1 second; 1 is right arm, 0 is left arm, 2 is tradeoff arm.
 
 engine = chess.engine.SimpleEngine.popen_uci("C:\\Patricia\\patricia_v3.exe") #  Stockfish\\stockfish-windows-x86-64-avx2"p
 board = chess.Board()
@@ -48,10 +48,10 @@ previous_board = None
 width = 750
 height = 750
 true_corners = np.float32([
-    [642, 220], # Top left
-    [1279, 220], # Top right
-    [1270, 867], # Bottom right
-    [644, 867], # Bottom left
+    [644, 240], # Top left
+    [1280, 240], # Top right
+    [1273, 890], # Bottom right
+    [645, 890], # Bottom left
 ])
 dst_pts = np.float32([
     [0, 0],
@@ -73,10 +73,10 @@ B_strength = 3.25
 threshold = 6
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2,2))
 
-upper_mapx = 14
-lower_mapx = 11
-upper_mapy = 10
-lower_mapy = 8
+upper_mapx = 0
+lower_mapx = 0
+upper_mapy = 0
+lower_mapy = 0
 
 check_1 = True
 previous_positions = None
@@ -219,7 +219,7 @@ def determine_offset(row, col, square_size):
 def initialize_camera():
     global cap
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920) 
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     if not cap.isOpened():
         raise RuntimeError("Could not open camera")
@@ -1251,11 +1251,11 @@ def promotion_move(from_square, to_square, from_arm, to_arm, swap, move): # star
 def initialize_game():
     global initial_characteristics
     initialize_camera()
-    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_09_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_10_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_11_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_12_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260317_15_46_13_Pro.jpg")
+    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_51_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_52_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_53_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_54_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_55_Pro.jpg")
                                                 ])
     starting_values()
     send_to_arduino(10, "initialize game", False, True) # Signal to arduino to move arms to default
@@ -1293,28 +1293,7 @@ else:
     elif board.is_stalemate():
         print_timestamped("Stalemate! It's a draw.")
 
-
-
-
-        """move_arm_to_square(f, "pickup", from_arm)
-        if from_arm != to_arm:
-            move_to_default(from_arm, "pick")
-            exchange_pieces(from_arm, to_arm)
-        else: # if the move is within the same arm, arm passed as parameter does not matter; can be to_arm or from_arm
-            time.sleep(1.5)
-            move_arm_to_square(t, "dropoff", from_arm)
-        move_to_default(from_arm, "pickup")"""
-
-
-"""time.sleep(2) #This is just for testing cuz arduino needs time to link w computer
-move_arm_to_square(37, "pickup", 1)
-
-
-while True:
-    check_for_move()"""
-"""
-
-
+"""initialize_camera()
 
 original_image = take_pictures()[0]
 warped_image = warp_board(original_image)
@@ -1329,179 +1308,76 @@ image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2GRAY)
 hsv_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
 square_size = image.shape[0] // 8
 
-
-x_start = 1 * square_size
-y_start = 5 * square_size
-mapped_row = map_range(5, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(1, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
-cv2.imshow("Square 1X5", square)
-
+x_start = 0 * square_size
+y_start = 0 * square_size
+x_min, x_max, y_min, y_max = determine_offset(0, 0, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 0X0", square)
 
 x_start = 7 * square_size
 y_start = 7 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
-cv2.imshow("Square 7x7", square)
+x_min, x_max, y_min, y_max = determine_offset(7, 7, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 7X7", square)
 
 x_start = 7 * square_size
 y_start = 0 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
+x_min, x_max, y_min, y_max = determine_offset(7, 0, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 7X0", square)
 
 x_start = 0 * square_size
 y_start = 7 * square_size
-mapped_row = map_range(0, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
+x_min, x_max, y_min, y_max = determine_offset(0, 7, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 0X7", square)
 
-x_start = 3 * square_size
-y_start = 0 * square_size
-mapped_row = map_range(3, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(0, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
-cv2.imshow("Square 3X0", square)
+x_start = 4 * square_size
+y_start = 2 * square_size
+x_min, x_max, y_min, y_max = determine_offset(4, 2, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 4X2", square)
 
-x_start = 7 * square_size
-y_start = 1 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(1, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
-cv2.imshow("Square 7X1", square)
+x_start = 3 * square_size
+y_start = 6 * square_size
+x_min, x_max, y_min, y_max = determine_offset(3, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 3X6", square)
+
+x_start = 4 * square_size
+y_start = 6 * square_size
+x_min, x_max, y_min, y_max = determine_offset(4, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 4X6", square)
+
+x_start = 5 * square_size
+y_start = 6 * square_size
+x_min, x_max, y_min, y_max = determine_offset(5, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 5X6", square)
 
 x_start = 6 * square_size
 y_start = 6 * square_size
-mapped_row = map_range(6, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(6, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
+x_min, x_max, y_min, y_max = determine_offset(6, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 6X6", square)
 
-x_start = 7 * square_size
+x_start = 2 * square_size
 y_start = 6 * square_size
-mapped_row = map_range(6, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(7, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
-cv2.imshow("Square 7X6", square)
+x_min, x_max, y_min, y_max = determine_offset(2, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 2X6", square)
 
-x_start = 6 * square_size
-y_start = 7 * square_size
-mapped_row = map_range(7, 0, 7, lower_mapy, upper_mapy)
-mapped_col = map_range(6, 0, 7, lower_mapx, upper_mapx)
-square = warped_image[y_start + mapped_row + square_size // 5:(y_start + square_size) - square_size//5 + mapped_row, x_start + mapped_col + square_size//5:(x_start + square_size) - square_size//5 + mapped_col]
-cv2.imshow("Square 6X7", square)
-cv2.waitKey(0)
-
-
-
-
-
-
-
-x_start = 4 * square_size
-y_start = 4 * square_size
-square = image[y_start + map_range(5, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(5, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
-hsv = hsv_image[y_start + map_range(5, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(5, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-h, w, _ = hsv.shape
-center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_timestamped("4, 4: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-
-x_start = 5 * square_size
+x_start = 1 * square_size
 y_start = 6 * square_size
-square = image[y_start + map_range(7, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(6, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
-hsv = hsv_image[y_start + map_range(7, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(6, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-h, w, _ = hsv.shape
-center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_timestamped("5, 6: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-
-x_start = 7 * square_size
-y_start = 7 * square_size
-square = image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv27.GaussianBlur(square, (5, 5), 0)
-hsv = hsv_image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-h, w, _ = hsv.shape
-center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_timestamped("7, 7: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
+x_min, x_max, y_min, y_max = determine_offset(1, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 1X6", square)
 
 x_start = 0 * square_size
-y_start = 0 * square_size
-square = image[y_start + map_range(0, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(0, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
-hsv = hsv_image[y_start + map_range(0, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(0, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-h, w, _ = hsv.shape
-center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_timestamped("0, 0: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-
-x_start = 7 * square_size
-y_start = 0 * square_size
-square = image[y_start + map_range(0, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
-hsv = hsv_image[y_start + map_range(0, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(8, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-h, w, _ = hsv.shape
-center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_timestamped("7, 0: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-
-x_start = 0 * square_size
-y_start = 7 * square_size
-square = image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(0, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
-hsv = hsv_image[y_start + map_range(8, 0, 8, lower_mapy, upper_mapy):y_start + square_size, x_start + map_range(0, 0, 8, lower_mapx, upper_mapx):x_start + square_size]
-h, w, _ = hsv.shape
-center = cv2.GaussianBlur(hsv[h//4:3*h//4, w//4:3*w//4], (3, 3), 0)
-print_timestamped("0, 7: mean intensity:", cv2.mean(center[:, :, 2])[0], ", edges:", np.count_nonzero(cv2.Canny(blurred_image, 75, 225)) / blurred_image.size, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-
-
-
-hsv = cv2.cvtColor(warped_image, cv2.COLOR_BGR2HSV)
-square = hsv[4 * square_size:4 * square_size + square_size, 4 * square_size:4 * square_size + square_size]
-cv2.imshow("Square 4x4", square)
-avg_v = cv2.mean(hsv[:, :, 2])[0]
-print_timestamped("4x4", avg_v)
-
-square = hsv[5 * square_size:4 * square_size + square_size, 6 * square_size:4 * square_size + square_size]
-cv2.imshow("Square 5x6", square)
-cv2.waitKey(0)
-avg_v = cv2.mean(hsv[:, :, 2])[0]
-print_timestamped("5x6", avg_v)
-
-
-x_start = 4 * square_size
-y_start = 4 * square_size
-square = image[y_start:y_start + square_size, x_start:x_start + square_size]
-mean_intensity = cv2.mean(square)[0]
-print_timestamped(mean_intensity)
-print_timestamped(", ")
-
-x_start = 5 * square_size
 y_start = 6 * square_size
-square = image[y_start:y_start + square_size, x_start:x_start + square_size]
-mean_intensity = cv2.mean(square)[0]
-print_timestamped(mean_intensity)
+x_min, x_max, y_min, y_max = determine_offset(0, 6, square_size)
+square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
+cv2.imshow("Square 0X6", square)
 
-x_start = 4 * square_size
-y_start = 4 * square_size
-square = image[y_start:y_start + square_size - 2, x_start:x_start + square_size]
-cv2.imshow("Square 4,4", square,)
-cv2.waitKey(0)
-
-edges = cv2.Canny(blurred_image, 75, 225)
-print_timestamped("4, 4: edges:", np.count_nonzero(edges) / edges.size) #, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-
-
-
-x_start = 5 * square_size
-y_start = 6 * square_size
-square = image[y_start:y_start + square_size + 2, x_start + 1:x_start + square_size]
-cv2.imshow("Square 5, 6", square)
-
-blurred_image = cv2.GaussianBlur(square, (5, 5), 0)
-edges = cv2.Canny(blurred_image, 75, 225)
-cv2.imshow("Edges 5,6", edges)
-cv2.waitKey(0)
-print_timestamped("6, 7: edges:", np.count_nonzero(edges) / edges.size) #, ", variance:", np.var(blurred_image), ", Deviation:", np.std(blurred_image))
-"""
+cv2.waitKey(0)"""
