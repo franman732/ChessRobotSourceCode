@@ -48,10 +48,10 @@ previous_board = None
 width = 750
 height = 750
 true_corners = np.float32([
-    [644, 240], # Top left
-    [1280, 240], # Top right
-    [1273, 890], # Bottom right
-    [645, 890], # Bottom left
+    [645, 205], # Top left
+    [1283, 196], # Top right
+    [1283, 842], # Bottom right
+    [660, 851], # Bottom left
 ])
 dst_pts = np.float32([
     [0, 0],
@@ -66,7 +66,7 @@ not_initialized = True
 mean_strength = 1
 edges_strength = 1
 variance_strength = 1.5
-lightness_strength = 1.5
+lightness_strength = 1.75
 deviation_strength = 1.5
 A_strength = 3.25
 B_strength = 3.25
@@ -201,7 +201,7 @@ def hundredth_map_range(x, in_min, in_max, out_min, out_max):
     return round((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min, 4)
 
 def determine_offset(row, col, square_size):
-    const_min = 4
+    const_min = 6
     if col <= 3:
         x_min = map_range(col, 0, 3, 0 + const_min, square_size // 4)
         x_max = map_range(col, 0, 3, square_size // 2, 3 * square_size // 4)
@@ -1251,11 +1251,11 @@ def promotion_move(from_square, to_square, from_arm, to_arm, swap, move): # star
 def initialize_game():
     global initial_characteristics
     initialize_camera()
-    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_51_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_52_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_53_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_54_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260324_18_04_55_Pro.jpg")
+    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_05_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_06_Pro (2).jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_06_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_07_Pro.jpg"),
+                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_08_Pro.jpg")
                                                 ])
     starting_values()
     send_to_arduino(10, "initialize game", False, True) # Signal to arduino to move arms to default
@@ -1322,37 +1322,37 @@ cv2.imshow("Square 7X7", square)
 
 x_start = 7 * square_size
 y_start = 0 * square_size
-x_min, x_max, y_min, y_max = determine_offset(7, 0, square_size)
+x_min, x_max, y_min, y_max = determine_offset(0, 7, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 7X0", square)
 
 x_start = 0 * square_size
 y_start = 7 * square_size
-x_min, x_max, y_min, y_max = determine_offset(0, 7, square_size)
+x_min, x_max, y_min, y_max = determine_offset(7, 0, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 0X7", square)
 
 x_start = 4 * square_size
 y_start = 2 * square_size
-x_min, x_max, y_min, y_max = determine_offset(4, 2, square_size)
+x_min, x_max, y_min, y_max = determine_offset(2, 4, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 4X2", square)
 
 x_start = 3 * square_size
 y_start = 6 * square_size
-x_min, x_max, y_min, y_max = determine_offset(3, 6, square_size)
+x_min, x_max, y_min, y_max = determine_offset(6, 3, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 3X6", square)
 
 x_start = 4 * square_size
 y_start = 6 * square_size
-x_min, x_max, y_min, y_max = determine_offset(4, 6, square_size)
+x_min, x_max, y_min, y_max = determine_offset(6, 4, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 4X6", square)
 
 x_start = 5 * square_size
 y_start = 6 * square_size
-x_min, x_max, y_min, y_max = determine_offset(5, 6, square_size)
+x_min, x_max, y_min, y_max = determine_offset(6, 5, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 5X6", square)
 
@@ -1364,19 +1364,19 @@ cv2.imshow("Square 6X6", square)
 
 x_start = 2 * square_size
 y_start = 6 * square_size
-x_min, x_max, y_min, y_max = determine_offset(2, 6, square_size)
+x_min, x_max, y_min, y_max = determine_offset(6, 2, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 2X6", square)
 
 x_start = 1 * square_size
 y_start = 6 * square_size
-x_min, x_max, y_min, y_max = determine_offset(1, 6, square_size)
+x_min, x_max, y_min, y_max = determine_offset(6, 1, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 1X6", square)
 
 x_start = 0 * square_size
 y_start = 6 * square_size
-x_min, x_max, y_min, y_max = determine_offset(0, 6, square_size)
+x_min, x_max, y_min, y_max = determine_offset(6, 0, square_size)
 square = warped_image[y_min + y_start:y_max + y_start, x_min + x_start:x_max + x_start]
 cv2.imshow("Square 0X6", square)
 
