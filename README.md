@@ -1,6 +1,5 @@
 # Autonomous Over-the-Board Chess Robot
-A robot that plays physical chess against a human autonomously
-The robot detects board state, computes legal moves using a chess engine, and physically executes moves on a real chessboard.
+A robot that plays physical chess against a human autonomously by detecting board state, computing legal moves using a chess engine, and physically executing moves on a real chessboard using 3 robotic arms.
 
 
 ## Features
@@ -28,10 +27,10 @@ The system consists of four major components:
 The program tracks piece from the starting position and updates board state after each human move is detected using OpenCV characteristic based detection.
 
 ### Chess Engine
-Legal moves are generated internally and evaluated by the engine to select the strongest move.
+Legal moves are generated using PyChess and evaluated by the chess engine to select the strongest move.
 
 ### Motion Planning
-The robot converts chess coordinates into physical movement commands while avoiding collisions with other pieces.
+The robot converts chess coordinates into physical movement commands using 2D inverse kinematics and geometric principles while avoiding collisions with other pieces.
 
 ### Hardware Control
-An Arduino controls the robotic arms and executes movement instructions sent from Python.
+An NVIDIA Jetson Orin Nano runs the high-level Python control system and sends movement commands to an Arduino Mega, which controls the robot arms. Devices on the Jetson’s local Wi-Fi network can connect via its IP address to remotely access and control the terminal for debugging.
