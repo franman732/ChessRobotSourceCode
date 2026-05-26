@@ -1252,12 +1252,7 @@ def promotion_move(from_square, to_square, from_arm, to_arm, swap, move): # star
 def initialize_game():
     global initial_characteristics
     initialize_camera()
-    initial_characteristics = infer_chess_board([cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_05_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_06_Pro (2).jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_06_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_07_Pro.jpg"),
-                                                cv2.imread("C:\\Chess_Images\\WIN_20260330_16_45_08_Pro.jpg")
-                                                ])
+    initial_characteristics = infer_chess_board(take_pictures())
     starting_values()
     send_to_arduino(10, "initialize game", False, True) # Signal to arduino to move arms to default
 
